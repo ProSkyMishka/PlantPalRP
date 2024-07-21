@@ -12,27 +12,25 @@ class Servo:
         self.pwm.freq(freq)
         self.MIN_DUTY = MIN_DUTY
         self.MAX_DUTY = MAX_DUTY
-        self.current_deg = 130  # Track the current angle
+        self.current_deg = 130
         
-    def rotateDeg(self, deg, duration=2):  # Add duration parameter
+    def rotateDeg(self, deg, duration=2):
         if deg < 0:
             deg = 0
         elif deg > 180:
             deg = 180
         
-        # Calculate the duty cycle for the target angle
         target_duty_ns = int(self.MAX_DUTY - deg * (self.MAX_DUTY-self.MIN_DUTY)/180)
         
-        # Calculate the step size for smooth rotation
-        steps = 100  # Adjust for smoothness (more steps = smoother)
+        steps = 100
         step_size = (target_duty_ns - self.pwm.duty_ns()) / steps
         
         # Rotate smoothly
         for _ in range(steps):
             self.pwm.duty_ns(int(self.pwm.duty_ns() + step_size))
-            time.sleep(duration / steps)  # Divide duration across steps
+            time.sleep(duration / steps)
             
-        self.current_deg = deg  # Update the current angle
+        self.current_deg = deg
 
 def connect_WiFi(ssid, password):
     wlan.active(True)
@@ -42,6 +40,7 @@ def connect_WiFi(ssid, password):
     while connection_timeout > 0:
         if wlan.status() >= 3:
             break
+        print(wlan.status())
         connection_timeout -= 1
         led.toggle()
         time.sleep(1)
@@ -54,21 +53,18 @@ def connect_WiFi(ssid, password):
         print('IP address:', network_info[0])
         return True
 
-# URL сайта
-device_id = "aezsxdfcgvhbjknl37y2y87ehd"
-url = f"http://10.29.91.45:8080/water/{device_id}" # поменять 10.29.91.60 на ip Ромы
+device_id = "newDevice"
+url = f"http://89.169.161.205:8080/water/{device_id}"
 frequency = 2
 servo = Servo()
 led = machine.Pin('LED', machine.Pin.OUT)
 wlan = network.WLAN(network.STA_IF)
-wlan.active(False)
 led.on()
 time.sleep(3)
 led.off()
 
 ssid = 'Servo-Control'
 password = 'PicoW-Servo'
-# device_id = "12345rtghjde782yhiux"
 
 station = network.WLAN(network.AP_IF)
 station.active(False)
@@ -84,7 +80,6 @@ print(station.ifconfig())
 s = socket.socket()
 s.bind(('', 80))
 s.listen(5)
-# Listen for connections
 while True:
     try:
         conn, addr = s.accept()
@@ -105,7 +100,7 @@ while True:
         conn.send(resp)
         conn.close()
         if ssid != "":
-            if connect_WiFi(' Plants_smart', 'SmartPla9t6'):
+            if connect_WiFi(ssid, password):
                 station.active(False)
                 break
     except OSError as e:
@@ -114,13 +109,9 @@ while True:
     
 led.on()
 while True:
-    # Отправка GET-запроса
     try:
-#         print("hi")
         response = urequests.get(url)
-#         print("hello")
         if response.status_code == 200:
-        # Декодирование ответа в формате JSON
             data = ujson.loads(response.text)
     
             watering = data["watering"]
@@ -133,18 +124,11 @@ while True:
             led.toggle()
             time.sleep(0.25)
             led.toggle()
-#             print(watering, frequency, timeInterval)
         
             if watering == 1:
                 servo.rotateDeg(140)
                 time.sleep(timeInterval)
                 servo.rotateDeg(50)
             time.sleep(frequency * 60)
-#         else:
-            # Обработка ошибки
-#             print("Ошибка запроса:", response.status_code)
-    except OSError as e:
-        conn.close()
-#         print('Connection closed')
-
-
+    except:
+        pass
