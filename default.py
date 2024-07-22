@@ -63,8 +63,8 @@ led.on()
 time.sleep(3)
 led.off()
 
-ssid = 'SNR-CPE-45C4'
-password = 'LWWczk7AKQrF'
+ssid = ' Plants_smart'
+password = 'SmartPla9t6'
 
 while True:
     if connect_WiFi(ssid, password):
